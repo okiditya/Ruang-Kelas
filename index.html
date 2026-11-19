@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Informasi Ruang Kelas Pelatihan</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        navy: {
+                            50: '#f2f6fa',
+                            100: '#e1ebf3',
+                            200: '#c8d9e9',
+                            300: '#a2bfdb',
+                            400: '#759ec7',
+                            500: '#5380b4',
+                            600: '#2a638a',
+                            700: '#1e3a5f',
+                            800: '#182f4d',
+                            900: '#14263e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- Navbar / Header -->
+    <header class="bg-navy-700 text-white shadow-md sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-4 gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="bg-navy-600 p-2.5 rounded-xl border border-navy-500/40 shadow-inner">
+                        <i data-lucide="building-2" class="w-6 h-6 text-sky-200"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg sm:text-xl font-bold tracking-tight text-white">Manajemen Ruang Kelas Pelatihan</h1>
+                        <p class="text-xs text-sky-200/90">Form Input Alokasi & Database Terpadu</p>
+                    </div>
+                </div>
+                
+                <!-- Navigation Tabs -->
+                <nav class="flex bg-navy-800/80 p-1 rounded-xl border border-navy-600/50 self-start sm:self-auto">
+                    <button id="tab-btn-utama" onclick="switchTab('utama')" class="flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-all bg-navy-600 text-white shadow-sm">
+                        <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                        <span>Form & Database</span>
+                    </button>
+                    <button id="tab-btn-ruang" onclick="switchTab('ruang')" class="flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-all text-sky-200 hover:text-white hover:bg-navy-700/60">
+                        <i data-lucide="door-open" class="w-4 h-4"></i>
+                        <span>Referensi Ruang</span>
+                        <span id="badge-total-ruang" class="ml-0.5 px-1.5 py-0.5 text-[11px] rounded-full bg-navy-900/70 text-sky-200">8</span>
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        
+        <!-- Loading State Overlay -->
+        <div id="loading-banner" class="mb-6 bg-white border border-slate-200 rounded-xl p-4 flex items-center justify-center gap-3 shadow-sm">
+            <div class="w-5 h-5 border-2 border-navy-600 border-t-transparent rounded-full animate-spin"></div>
+            <span class="text-sm font-medium text-slate-600">Menghubungkan ke database cloud...</span>
+        </div>
+
+        <!-- TAB 1: FORM & DATABASE UTAMA -->
+        <div id="view-utama" class="space-y-6">
+            
+            <!-- KPI Summary Cards -->
+            <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Total Pelatihan -->
+                <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow flex items-center gap-4">
+                    <div class="p-3 rounded-xl bg-navy-50 text-navy-700">
+                        <i data-lucide="book-open-check" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Pelatihan</p>
+                        <p id="kpi-total-pelatihan" class="text-2xl font-bold text-slate-800 mt-0.5">0</p>
+                    </div>
+                </div>
+
+                <!-- Ruang Digunakan -->
+                <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow flex items-center gap-4">
+                    <div class="p-3 rounded-xl bg-sky-50 text-navy-600">
+                        <i data-lucide="door-closed" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Ruang Digunakan</p>
+                        <div class="flex items-baseline gap-1.5 mt-0.5">
+                            <p id="kpi-ruang-digunakan" class="text-2xl font-bold text-slate-800">0</p>
+                            <span id="kpi-total-ruang-tersedia" class="text-xs text-slate-400 font-medium">/ 8 ruang</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Total Peserta -->
+                <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow flex items-center gap-4">
+                    <div class="p-3 rounded-xl bg-emerald-50 text-emerald-700">
+                        <i data-lucide="users" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Peserta</p>
+                        <p id="kpi-total-peserta" class="text-2xl font-bold text-slate-800 mt-0.5">0</p>
+                    </div>
+                </div>
+
+                <!-- Rata-rata Peserta -->
+                <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow flex items-center gap-4">
+                    <div class="p-3 rounded-xl bg-amber-50 text-amber-700">
+                        <i data-lucide="bar-chart-3" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Rata-rata Peserta</p>
+                        <div class="flex items-baseline gap-1 mt-0.5">
+                            <p id="kpi-rata-peserta" class="text-2xl font-bold text-slate-800">0</p>
+                            <span class="text-xs text-slate-400 font-medium">org/kelas</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Main Grid: Form Input (Left) & Database Table (Right) -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                
+                <!-- Form Input Card (4 columns on lg) -->
+                <section class="lg:col-span-4 bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
+                    <div class="bg-gradient-to-r from-navy-700 to-navy-600 px-6 py-4 text-white flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <i data-lucide="clipboard-edit" class="w-5 h-5 text-sky-200"></i>
+                            <h2 id="form-title" class="font-semibold text-base">Form Input Ruang Kelas</h2>
+                        </div>
+                        <button id="btn-cancel-edit" onclick="resetForm()" class="hidden text-xs bg-white/15 hover:bg-white/25 px-2.5 py-1 rounded-lg transition-colors">
+                            Batal Edit
+                        </button>
+                    </div>
+
+                    <form id="pelatihan-form" onsubmit="handleFormSubmit(event)" class="p-6 space-y-4">
+                        <input type="hidden" id="edit-doc-id" value="">
+
+                        <!-- Nama Pelatihan -->
+                        <div>
+                            <label for="input-nama-pelatihan" class="block text-sm font-medium text-slate-700 mb-1.5">
+                                Nama Pelatihan <span class="text-rose-500">*</span>
+                            </label>
+                            <input type="text" id="input-nama-pelatihan" required
+                                placeholder="Contoh: Leadership & Manajerial Dasar"
+                                class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-navy-600/30 focus:border-navy-600 transition-all">
+                        </div>
+
+                        <!-- Nama Ruang Kelas -->
+                        <div>
+                            <label for="input-nama-ruang" class="block text-sm font-medium text-slate-700 mb-1.5">
+                                Nama Ruang Kelas <span class="text-rose-500">*</span>
+                            </label>
+                            <select id="input-nama-ruang" required onchange="updateRoomPreview()"
+                                class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-navy-600/30 focus:border-navy-600 transition-all">
+                                <option value="">-- Pilih Ruang Kelas --</option>
+                            </select>
+
+                            <!-- Dynamic Room Info Box -->
+                            <div id="room-info-box" class="hidden mt-2.5 p-3 rounded-xl bg-navy-50/80 border border-navy-200/70 text-xs space-y-1.5">
+                                <div class="flex items-center justify-between text-navy-800 font-medium">
+                                    <span class="flex items-center gap-1.5">
+                                        <i data-lucide="map-pin" class="w-3.5 h-3.5 text-navy-600"></i>
+                                        <span id="preview-lokasi">-</span>
+                                    </span>
+                                    <span class="px-2 py-0.5 rounded-md bg-white text-navy-700 border border-navy-200 font-semibold">
+                                        Kapasitas: <span id="preview-kapasitas">0</span> org
+                                    </span>
+                                </div>
+                                <p class="text-slate-600 leading-relaxed">
+                                    <span class="font-medium text-slate-700">Fasilitas:</span> <span id="preview-fasilitas">-</span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Tanggal & Jumlah Peserta -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-3.5">
+                            <div>
+                                <label for="input-tanggal" class="block text-sm font-medium text-slate-700 mb-1.5">
+                                    Tanggal Pelaksanaan <span class="text-rose-500">*</span>
+                                </label>
+                                <input type="date" id="input-tanggal" required
+                                    class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-navy-600/30 focus:border-navy-600 transition-all">
+                            </div>
+
+                            <div>
+                                <label for="input-peserta" class="block text-sm font-medium text-slate-700 mb-1.5">
+                                    Jumlah Peserta <span class="text-rose-500">*</span>
+                                </label>
+                                <input type="number" id="input-peserta" min="1" max="1000" required oninput="checkCapacityWarning()"
+                                    placeholder="Contoh: 25"
+                                    class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-navy-600/30 focus:border-navy-600 transition-all">
+                            </div>
+                        </div>
+
+                        <!-- Capacity Warning Alert -->
+                        <div id="capacity-warning" class="hidden p-3 rounded-xl bg-amber-50 border border-amber-300 text-amber-800 text-xs flex items-start gap-2.5">
+                            <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></i>
+                            <div>
+                                <p class="font-semibold">Perhatian: Melebihi Kapasitas Ruang!</p>
+                                <p id="capacity-warning-text" class="mt-0.5 text-amber-700">Jumlah peserta melebihi kapasitas maksimal ruangan yang dipilih.</p>
+                            </div>
+                        </div>
+
+                        <!-- Keterangan / Kebutuhan Khusus -->
+                        <div>
+                            <label for="input-keterangan" class="block text-sm font-medium text-slate-700 mb-1.5">
+                                Keterangan / Kebutuhan Khusus
+                            </label>
+                            <textarea id="input-keterangan" rows="2"
+                                placeholder="Opsional: Layout U-Shape, tambahan mic wireless, konsumsi..."
+                                class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-navy-600/30 focus:border-navy-600 transition-all resize-none"></textarea>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="pt-2">
+                            <button type="submit" id="btn-submit-form"
+                                class="w-full py-2.5 px-4 bg-navy-700 hover:bg-navy-800 active:bg-navy-900 text-white font-medium text-sm rounded-xl shadow-sm hover:shadow transition-all flex items-center justify-center gap-2">
+                                <i data-lucide="save" class="w-4 h-4"></i>
+                                <span id="btn-submit-text">Simpan Data ke Database</span>
+                            </button>
+                        </div>
+                    </form>
+                </section>
+
+                <!-- Database Table Card (8 columns on lg) -->
+                <section class="lg:col-span-8 bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden flex flex-col">
+                    <!-- Table Header & Actions -->
+                    <div class="p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h2 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                                <i data-lucide="database" class="w-5 h-5 text-navy-600"></i>
+                                <span>Database Alokasi Ruang Kelas</span>
+                            </h2>
+                            <p class="text-xs text-slate-500 mt-0.5">Daftar jadwal pelatihan dan penggunaan ruang kelas aktif</p>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-2">
+                            <button onclick="exportToCSV()" class="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-xl shadow-sm transition-colors">
+                                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                                <span>Ekspor CSV</span>
+                            </button>
+                            <button onclick="confirmResetData()" class="inline-flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-xl border border-slate-200 transition-colors">
+                                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                                <span>Reset Contoh</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Search & Filter Bar -->
+                    <div class="p-4 bg-slate-50/70 border-b border-slate-200 grid grid-cols-1 sm:grid-cols-12 gap-3">
+                        <div class="sm:col-span-7 relative">
+                            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+                            <input type="text" id="search-input" oninput="renderDatabaseTable()"
+                                placeholder="Cari nama pelatihan atau keterangan..."
+                                class="w-full pl-9 pr-3.5 py-2 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-navy-600/30 focus:border-navy-600">
+                        </div>
+                        <div class="sm:col-span-5">
+                            <select id="filter-ruang" onchange="renderDatabaseTable()"
+                                class="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-navy-600/30 focus:border-navy-600">
+                                <option value="">Semua Ruang Kelas</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Responsive Table Wrapper -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-100/80 border-b border-slate-200 text-[11px] font-semibold text-slate-600 uppercase tracking-wider">
+                                    <th class="py-3 px-4 w-12 text-center">No</th>
+                                    <th class="py-3 px-4">Nama Pelatihan</th>
+                                    <th class="py-3 px-4">Ruang Kelas</th>
+                                    <th class="py-3 px-4">Tanggal</th>
+                                    <th class="py-3 px-4 text-center">Peserta</th>
+                                    <th class="py-3 px-4">Keterangan</th>
+                                    <th class="py-3 px-4 text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="database-tbody" class="divide-y divide-slate-100 text-sm">
+                                <!-- Rows injected via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div id="empty-table-state" class="hidden py-12 px-4 text-center">
+                        <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+                            <i data-lucide="folder-open" class="w-6 h-6"></i>
+                        </div>
+                        <p class="text-sm font-medium text-slate-700">Tidak ada data pelatihan ditemukan</p>
+                        <p class="text-xs text-slate-500 mt-1">Silakan tambahkan data baru melalui form di samping atau ubah kata kunci pencarian.</p>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- TAB 2: MASTER REFERENSI RUANG -->
+        <div id="view-ruang" class="hidden space-y-6">
+            <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-200">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                            <i data-lucide="building" class="w-5 h-5 text-navy-600"></i>
+                            <span>Master Referensi Ruang Kelas</span>
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Daftar ruang kelas yang tersedia beserta kapasitas maksimal, lokasi gedung, dan fasilitas.</p>
+                    </div>
+                    <button onclick="openRoomModal()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-navy-700 hover:bg-navy-800 text-white text-sm font-medium rounded-xl shadow-sm transition-colors self-start sm:self-auto">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        <span>Tambah Ruang Baru</span>
+                    </button>
+                </div>
+
+                <!-- Grid of Rooms -->
+                <div id="rooms-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-6">
+                    <!-- Room cards injected via JS -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 mt-auto py-4">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
+            <p>Sistem Form & Database Informasi Ruang Kelas Pelatihan</p>
+            <p id="sync-status" class="flex items-center gap-1.5 text-emerald-600 font-medium">
+                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                <span>Tersinkronisasi dengan Cloud</span>
+            </p>
+        </div>
+    </footer>
+
+    <!-- Modal: Tambah / Edit Master Ruang -->
+    <div id="room-modal" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full shadow-xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div class="bg-navy-700 px-6 py-4 text-white flex items-center justify-between">
+                <h3 id="room-modal-title" class="font-semibold text-base">Tambah Ruang Kelas</h3>
+                <button onclick="closeRoomModal()" class="text-sky-200 hover:text-white p-1 rounded-lg">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form id="room-form" onsubmit="handleRoomSubmit(event)" class="p-6 space-y-4">
+                <input type="hidden" id="room-doc-id" value="">
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Nama Ruang Kelas <span class="text-rose-500">*</span></label>
+                    <input type="text" id="room-input-nama" required placeholder="Contoh: Ruang Borobudur"
+                        class="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-navy-600/30 focus:border-navy-600">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Kapasitas (Orang) <span class="text-rose-500">*</span></label>
+                        <input type="number" id="room-input-kapasitas" min="1" max="2000" required placeholder="30"
+                            class="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-navy-600/30 focus:border-navy-600">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Status Operasional</label>
+                        <select id="room-input-status"
+                            class="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-navy-600/30 focus:border-navy-600">
+                            <option value="Tersedia">Tersedia</option>
+                            <option value="Perawatan">Perawatan</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Lokasi / Gedung <span class="text-rose-500">*</span></label>
+                    <input type="text" id="room-input-lokasi" required placeholder="Contoh: Gedung Utama Lt. 2"
+                        class="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-navy-600/30 focus:border-navy-600">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Fasilitas Utama <span class="text-rose-500">*</span></label>
+                    <textarea id="room-input-fasilitas" rows="2" required placeholder="Smart TV 75 inch, AC Central, Wi-Fi, Whiteboard..."
+                        class="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-navy-600/30 focus:border-navy-600 resize-none"></textarea>
+                </div>
+
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeRoomModal()" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">Batal</button>
+                    <button type="submit" class="px-4 py-2 text-sm font-medium bg-navy-700 hover:bg-navy-800 text-white rounded-xl shadow-sm transition-colors">Simpan Ruang</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Custom Confirmation Modal (Replaces window.confirm) -->
+    <div id="confirm-modal" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl border border-slate-200">
+            <div class="flex items-center gap-3 text-rose-600 mb-3">
+                <div class="p-2.5 bg-rose-50 rounded-xl">
+                    <i data-lucide="alert-circle" class="w-6 h-6"></i>
+                </div>
+                <h3 id="confirm-title" class="font-bold text-slate-800 text-base">Konfirmasi Tindakan</h3>
+            </div>
+            <p id="confirm-message" class="text-sm text-slate-600 leading-relaxed mb-5">Apakah Anda yakin ingin melanjutkan tindakan ini?</p>
+            <div class="flex justify-end gap-2.5">
+                <button onclick="closeConfirmModal()" class="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">Batal</button>
+                <button id="confirm-action-btn" class="px-4 py-2 text-sm font-medium text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-sm transition-colors">Ya, Lanjutkan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+    <!-- Firebase & Application Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Konfigurasi Firebase dari environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-classroom-app';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+
+        let app, auth, db;
+        let currentUser = null;
+        let trainingsData = [];
+        let roomsData = [];
+        let confirmCallback = null;
+
+        // Data Awal Master Referensi Ruang (8 Ruangan)
+        const DEFAULT_ROOMS = [
+            { nama: "Ruang Kartini", kapasitas: 30, lokasi: "Gedung Utama Lt. 1", fasilitas: "Smart TV 75\", AC Central, Wi-Fi High Speed, Whiteboard", status: "Tersedia" },
+            { nama: "Ruang Sudirman", kapasitas: 40, lokasi: "Gedung Utama Lt. 1", fasilitas: "Proyektor HD, Sound System, 2 Mic Wireless, Flipchart", status: "Tersedia" },
+            { nama: "Ruang Diponegoro", kapasitas: 25, lokasi: "Gedung Utama Lt. 2", fasilitas: "LED Display 65\", AC Split, Meja Modular U-Shape", status: "Tersedia" },
+            { nama: "Ruang Cut Nyak Dien", kapasitas: 20, lokasi: "Gedung Utama Lt. 2", fasilitas: "Smart Board Interaktif, Video Conference Cam, Wi-Fi", status: "Tersedia" },
+            { nama: "Ruang Gajah Mada", kapasitas: 50, lokasi: "Gedung Sayap Timur Lt. 1", fasilitas: "Dual Proyektor, Audio Mixer, Podium, AC Central", status: "Tersedia" },
+            { nama: "Ruang Ki Hajar Dewantara", kapasitas: 35, lokasi: "Gedung Sayap Timur Lt. 2", fasilitas: "Proyektor Laser, Whiteboard Kaca, Area Diskusi Kelompok", status: "Tersedia" },
+            { nama: "Lab Komputer Alpha", kapasitas: 24, lokasi: "Gedung Teknologi Lt. 1", fasilitas: "24 PC Core i7, Jaringan LAN Gigabit, Server Lokal, Proyektor", status: "Tersedia" },
+            { nama: "Auditorium Utama", kapasitas: 150, lokasi: "Gedung Serbaguna Lt. 1", fasilitas: "Videotron P2.5, Sound System Array, Panggung, 4 Mic Wireless", status: "Tersedia" }
+        ];
+
+        // Data Awal Pelatihan Korporat Realistis
+        const DEFAULT_TRAININGS = [
+            {
+                namaPelatihan: "Leadership & Supervisory Skills Batch IV",
+                namaRuang: "Ruang Sudirman",
+                tanggal: "2026-11-23",
+                jumlahPeserta: 32,
+                keterangan: "Layout meja U-Shape, butuh 2 flipchart tambahan",
+                timestamp: "2026-11-19 08:15"
+            },
+            {
+                namaPelatihan: "Analisis Data & Visualisasi dengan Excel Lanjutan",
+                namaRuang: "Lab Komputer Alpha",
+                tanggal: "2026-11-24",
+                jumlahPeserta: 22,
+                keterangan: "Install Microsoft 365 & Power BI Desktop di semua PC",
+                timestamp: "2026-11-19 08:40"
+            },
+            {
+                namaPelatihan: "Onboarding Karyawan Baru Nasional Q4",
+                namaRuang: "Auditorium Utama",
+                tanggal: "2026-11-25",
+                jumlahPeserta: 115,
+                keterangan: "Persiapan backdrop digital & registrasi di lobi utama",
+                timestamp: "2026-11-19 09:05"
+            },
+            {
+                namaPelatihan: "Effective Business Communication & Negotiation",
+                namaRuang: "Ruang Kartini",
+                tanggal: "2026-11-26",
+                jumlahPeserta: 24,
+                keterangan: "Sesi roleplay kelompok kecil",
+                timestamp: "2026-11-19 09:30"
+            },
+            {
+                namaPelatihan: "Manajemen Risiko & Kepatuhan Tata Kelola",
+                namaRuang: "Ruang Gajah Mada",
+                tanggal: "2026-11-27",
+                jumlahPeserta: 45,
+                keterangan: "Layout classroom standar, butuh mic meja moderator",
+                timestamp: "2026-11-19 10:00"
+            }
+        ];
+
+        // Warna badge berdasarkan nama ruangan
+        function getRoomBadgeClass(roomName) {
+            const palette = [
+                "bg-sky-100 text-sky-800 border-sky-200",
+                "bg-indigo-100 text-indigo-800 border-indigo-200",
+                "bg-emerald-100 text-emerald-800 border-emerald-200",
+                "bg-amber-100 text-amber-800 border-amber-200",
+                "bg-purple-100 text-purple-800 border-purple-200",
+                "bg-rose-100 text-rose-800 border-rose-200",
+                "bg-teal-100 text-teal-800 border-teal-200",
+                "bg-blue-100 text-blue-800 border-blue-200"
+            ];
+            let hash = 0;
+            for (let i = 0; i < roomName.length; i++) {
+                hash = roomName.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            return palette[Math.abs(hash) % palette.length];
+        }
+
+        // Format tanggal Indonesia
+        function formatTanggalID(dateStr) {
+            if (!dateStr) return "-";
+            try {
+                const [y, m, d] = dateStr.split("-");
+                const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+                return `${parseInt(d, 10)} ${months[parseInt(m, 10) - 1]} ${y}`;
+            } catch {
+                return dateStr;
+            }
+        }
+
+        // Format Timestamp saat ini
+        function getCurrentTimestamp() {
+            const now = new Date();
+            const pad = (n) => String(n).padStart(2, '0');
+            return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+        }
+
+        // Toast Notification
+        window.showToast = function(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const styles = {
+                success: 'bg-navy-800 text-white border-navy-600',
+                error: 'bg-rose-700 text-white border-rose-500',
+                info: 'bg-slate-800 text-white border-slate-600'
+            };
+            const icons = {
+                success: 'check-circle-2',
+                error: 'alert-octagon',
+                info: 'info'
+            };
+
+            toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg text-sm font-medium transition-all duration-300 transform translate-y-2 opacity-0 ${styles[type] || styles.success}`;
+            toast.innerHTML = `
+                <i data-lucide="${icons[type] || 'check-circle-2'}" class="w-4 h-4 shrink-0 text-sky-300"></i>
+                <span class="flex-grow">${message}</span>
+            `;
+
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        };
+
+        // Inisialisasi Firebase & Seed Data
+        async function initApp() {
+            // Set default date picker to today
+            document.getElementById('input-tanggal').valueAsDate = new Date();
+            lucide.createIcons();
+
+            if (!firebaseConfig) {
+                // Fallback mode in-memory jika config tidak tersedia
+                roomsData = DEFAULT_ROOMS.map((r, idx) => ({ id: 'room_' + idx, ...r }));
+                trainingsData = DEFAULT_TRAININGS.map((t, idx) => ({ id: 'trn_' + idx, ...t }));
+                document.getElementById('loading-banner').classList.add('hidden');
+                refreshAllUI();
+                return;
+            }
+
+            try {
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                // RULE 3: Auth sebelum query Firestore
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                currentUser = auth.currentUser;
+                if (!currentUser) return;
+
+                // RULE 1: Strict Path menggunakan /artifacts/{appId}/public/data/{collectionName}
+                const roomsColRef = collection(db, 'artifacts', appId, 'public', 'data', 'master_ruang');
+                const trainingsColRef = collection(db, 'artifacts', appId, 'public', 'data', 'pelatihan_ruang');
+
+                // Cek apakah database masih kosong, jika kosong isi dengan seed data
+                const existingRoomsSnap = await getDocs(roomsColRef);
+                if (existingRoomsSnap.empty) {
+                    for (const room of DEFAULT_ROOMS) {
+                        await addDoc(roomsColRef, room);
+                    }
+                }
+
+                const existingTrainingsSnap = await getDocs(trainingsColRef);
+                if (existingTrainingsSnap.empty) {
+                    for (const trn of DEFAULT_TRAININGS) {
+                        await addDoc(trainingsColRef, trn);
+                    }
+                }
+
+                // Real-time Listener: Master Ruang
+                onSnapshot(roomsColRef, (snapshot) => {
+                    if (!currentUser) return;
+                    roomsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    roomsData.sort((a, b) => a.nama.localeCompare(b.nama));
+                    refreshAllUI();
+                }, (error) => {
+                    console.error("Error fetching rooms:", error);
+                    showToast("Gagal memuat daftar referensi ruang.", "error");
+                });
+
+                // Real-time Listener: Pelatihan
+                onSnapshot(trainingsColRef, (snapshot) => {
+                    if (!currentUser) return;
+                    trainingsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    // Urutkan berdasarkan timestamp terbaru di memory (RULE 2)
+                    trainingsData.sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
+                    document.getElementById('loading-banner').classList.add('hidden');
+                    refreshAllUI();
+                }, (error) => {
+                    console.error("Error fetching trainings:", error);
+                    document.getElementById('loading-banner').classList.add('hidden');
+                    showToast("Gagal memuat database pelatihan.", "error");
+                });
+
+            } catch (err) {
+                console.error("Firebase init error:", err);
+                document.getElementById('loading-banner').classList.add('hidden');
+                showToast("Terjadi kesalahan koneksi database.", "error");
+            }
+        }
+
+        // Refresh seluruh komponen UI
+        function refreshAllUI() {
+            populateRoomDropdowns();
+            updateKPIs();
+            renderDatabaseTable();
+            renderRoomsGrid();
+            updateRoomPreview();
+            checkCapacityWarning();
+            lucide.createIcons();
+        }
+
+        // Isi Dropdown Ruang di Form & Filter
+        function populateRoomDropdowns() {
+            const formSelect = document.getElementById('input-nama-ruang');
+            const filterSelect = document.getElementById('filter-ruang');
+            
+            const currentFormVal = formSelect.value;
+            const currentFilterVal = filterSelect.value;
+
+            formSelect.innerHTML = '<option value="">-- Pilih Ruang Kelas --</option>';
+            filterSelect.innerHTML = '<option value="">Semua Ruang Kelas</option>';
+
+            roomsData.forEach(room => {
+                const isMaintenance = room.status === 'Perawatan';
+                const optForm = document.createElement('option');
+                optForm.value = room.nama;
+                optForm.textContent = `${room.nama} (Kap. ${room.kapasitas} org)${isMaintenance ? ' [Perawatan]' : ''}`;
+                if (isMaintenance) optForm.disabled = true;
+                formSelect.appendChild(optForm);
+
+                const optFilter = document.createElement('option');
+                optFilter.value = room.nama;
+                optFilter.textContent = room.nama;
+                filterSelect.appendChild(optFilter);
+            });
+
+            if (currentFormVal) formSelect.value = currentFormVal;
+            if (currentFilterVal) filterSelect.value = currentFilterVal;
+
+            document.getElementById('badge-total-ruang').textContent = roomsData.length;
+        }
+
+        // Update Info Preview Ruangan saat dipilih di form
+        window.updateRoomPreview = function() {
+            const selectedName = document.getElementById('input-nama-ruang').value;
+            const infoBox = document.getElementById('room-info-box');
+            
+            const room = roomsData.find(r => r.nama === selectedName);
+            if (!room) {
+                infoBox.classList.add('hidden');
+            } else {
+                document.getElementById('preview-lokasi').textContent = room.lokasi;
+                document.getElementById('preview-kapasitas').textContent = room.kapasitas;
+                document.getElementById('preview-fasilitas').textContent = room.fasilitas;
+                infoBox.classList.remove('hidden');
+            }
+            checkCapacityWarning();
+        };
+
+        // Peringatan otomatis jika jumlah peserta melebihi kapasitas ruangan
+        window.checkCapacityWarning = function() {
+            const selectedName = document.getElementById('input-nama-ruang').value;
+            const pesertaVal = parseInt(document.getElementById('input-peserta').value, 10);
+            const warningBox = document.getElementById('capacity-warning');
+            const warningText = document.getElementById('capacity-warning-text');
+
+            const room = roomsData.find(r => r.nama === selectedName);
+            if (room && !isNaN(pesertaVal) && pesertaVal > room.kapasitas) {
+                const selisih = pesertaVal - room.kapasitas;
+                warningText.textContent = `Peserta (${pesertaVal} org) melebihi kapasitas ${room.nama} (${room.kapasitas} org) sebanyak ${selisih} orang.`;
+                warningBox.classList.remove('hidden');
+            } else {
+                warningBox.classList.add('hidden');
+            }
+        };
+
+        // Update Kartu Ringkasan KPI
+        function updateKPIs() {
+            const totalPelatihan = trainingsData.length;
+            const uniqueRooms = new Set(trainingsData.map(t => t.namaRuang)).size;
+            const totalPeserta = trainingsData.reduce((sum, item) => sum + (Number(item.jumlahPeserta) || 0), 0);
+            const rataPeserta = totalPelatihan > 0 ? Math.round(totalPeserta / totalPelatihan) : 0;
+
+            document.getElementById('kpi-total-pelatihan').textContent = totalPelatihan;
+            document.getElementById('kpi-ruang-digunakan').textContent = uniqueRooms;
+            document.getElementById('kpi-total-ruang-tersedia').textContent = `/ ${roomsData.length} ruang`;
+            document.getElementById('kpi-total-peserta').textContent = totalPeserta.toLocaleString('id-ID');
+            document.getElementById('kpi-rata-peserta').textContent = rataPeserta;
+        }
+
+        // Render Tabel Database Interaktif
+        window.renderDatabaseTable = function() {
+            const tbody = document.getElementById('database-tbody');
+            const emptyState = document.getElementById('empty-table-state');
+            const searchQuery = document.getElementById('search-input').value.toLowerCase().trim();
+            const roomFilter = document.getElementById('filter-ruang').value;
+
+            const filtered = trainingsData.filter(item => {
+                const matchSearch = !searchQuery || 
+                    (item.namaPelatihan && item.namaPelatihan.toLowerCase().includes(searchQuery)) ||
+                    (item.keterangan && item.keterangan.toLowerCase().includes(searchQuery));
+                const matchRoom = !roomFilter || item.namaRuang === roomFilter;
+                return matchSearch && matchRoom;
+            });
+
+            tbody.innerHTML = '';
+
+            if (filtered.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            emptyState.classList.add('hidden');
+
+            filtered.forEach((item, index) => {
+                const roomObj = roomsData.find(r => r.nama === item.namaRuang);
+                const isOverCapacity = roomObj && Number(item.jumlahPeserta) > Number(roomObj.kapasitas);
+                const badgeClass = getRoomBadgeClass(item.namaRuang || '');
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/90 transition-colors group";
+                tr.innerHTML = `
+                    <td class="py-3.5 px-4 text-center text-slate-500 font-medium">${index + 1}</td>
+                    <td class="py-3.5 px-4">
+                        <div class="font-semibold text-slate-800">${escapeHTML(item.namaPelatihan)}</div>
+                        <div class="text-[11px] text-slate-400 mt-0.5 flex items-center gap-1">
+                            <i data-lucide="clock" class="w-3 h-3"></i>
+                            <span>Input: ${escapeHTML(item.timestamp || '-')}</span>
+                        </div>
+                    </td>
+                    <td class="py-3.5 px-4 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold border ${badgeClass}">
+                            ${escapeHTML(item.namaRuang)}
+                        </span>
+                    </td>
+                    <td class="py-3.5 px-4 whitespace-nowrap text-slate-700 font-medium text-xs">
+                        ${formatTanggalID(item.tanggal)}
+                    </td>
+                    <td class="py-3.5 px-4 text-center whitespace-nowrap">
+                        <span class="inline-flex items-center gap-1 font-semibold ${isOverCapacity ? 'text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200' : 'text-slate-700'}" title="${isOverCapacity ? 'Melebihi kapasitas ruang!' : 'Sesuai kapasitas'}">
+                            ${item.jumlahPeserta} org
+                            ${isOverCapacity ? '<i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-amber-600"></i>' : ''}
+                        </span>
+                    </td>
+                    <td class="py-3.5 px-4 text-xs text-slate-600 max-w-xs">
+                        <p class="line-clamp-2" title="${escapeHTML(item.keterangan || '-')}">${escapeHTML(item.keterangan || '-')}</p>
+                    </td>
+                    <td class="py-3.5 px-4 text-right whitespace-nowrap">
+                        <div class="inline-flex items-center gap-1">
+                            <button onclick="editTraining('${item.id}')" title="Edit Data"
+                                class="p-1.5 text-slate-500 hover:text-navy-700 hover:bg-navy-50 rounded-lg transition-colors">
+                                <i data-lucide="pencil" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="confirmDeleteTraining('${item.id}')" title="Hapus Data"
+                                class="p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            lucide.createIcons();
+        };
+
+        // Submit Form Pelatihan (Tambah / Update)
+        window.handleFormSubmit = async function(e) {
+            e.preventDefault();
+            if (!currentUser && firebaseConfig) {
+                showToast("Menunggu autentikasi database...", "info");
+                return;
+            }
+
+            const docId = document.getElementById('edit-doc-id').value;
+            const payload = {
+                namaPelatihan: document.getElementById('input-nama-pelatihan').value.trim(),
+                namaRuang: document.getElementById('input-nama-ruang').value,
+                tanggal: document.getElementById('input-tanggal').value,
+                jumlahPeserta: parseInt(document.getElementById('input-peserta').value, 10),
+                keterangan: document.getElementById('input-keterangan').value.trim(),
+                timestamp: getCurrentTimestamp()
+            };
+
+            const btnSubmit = document.getElementById('btn-submit-form');
+            btnSubmit.disabled = true;
+
+            try {
+                if (firebaseConfig && db) {
+                    if (docId) {
+                        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'pelatihan_ruang', docId);
+                        await updateDoc(docRef, payload);
+                        showToast("Data pelatihan berhasil diperbarui!");
+                    } else {
+                        const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'pelatihan_ruang');
+                        await addDoc(colRef, payload);
+                        showToast("Data pelatihan baru berhasil disimpan!");
+                    }
+                } else {
+                    if (docId) {
+                        const idx = trainingsData.findIndex(t => t.id === docId);
+                        if (idx > -1) trainingsData[idx] = { id: docId, ...payload };
+                        showToast("Data pelatihan berhasil diperbarui!");
+                    } else {
+                        trainingsData.unshift({ id: 'trn_' + Date.now(), ...payload });
+                        showToast("Data pelatihan baru berhasil disimpan!");
+                    }
+                    refreshAllUI();
+                }
+                resetForm();
+            } catch (err) {
+                console.error("Save error:", err);
+                showToast("Gagal menyimpan data ke database.", "error");
+            } finally {
+                btnSubmit.disabled = false;
+            }
+        };
+
+        // Isi Form untuk Mode Edit
+        window.editTraining = function(id) {
+            const item = trainingsData.find(t => t.id === id);
+            if (!item) return;
+
+            document.getElementById('edit-doc-id').value = item.id;
+            document.getElementById('input-nama-pelatihan').value = item.namaPelatihan;
+            document.getElementById('input-nama-ruang').value = item.namaRuang;
+            document.getElementById('input-tanggal').value = item.tanggal;
+            document.getElementById('input-peserta').value = item.jumlahPeserta;
+            document.getElementById('input-keterangan').value = item.keterangan || '';
+
+            document.getElementById('form-title').textContent = "Edit Data Pelatihan";
+            document.getElementById('btn-submit-text').textContent = "Simpan Perubahan";
+            document.getElementById('btn-cancel-edit').classList.remove('hidden');
+
+            updateRoomPreview();
+            document.getElementById('pelatihan-form').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+
+        // Reset Form ke Mode Input Baru
+        window.resetForm = function() {
+            document.getElementById('pelatihan-form').reset();
+            document.getElementById('edit-doc-id').value = '';
+            document.getElementById('input-tanggal').valueAsDate = new Date();
+            document.getElementById('form-title').textContent = "Form Input Ruang Kelas";
+            document.getElementById('btn-submit-text').textContent = "Simpan Data ke Database";
+            document.getElementById('btn-cancel-edit').classList.add('hidden');
+            document.getElementById('room-info-box').classList.add('hidden');
+            document.getElementById('capacity-warning').classList.add('hidden');
+        };
+
+        // Konfirmasi & Hapus Data Pelatihan
+        window.confirmDeleteTraining = function(id) {
+            const item = trainingsData.find(t => t.id === id);
+            if (!item) return;
+
+            openConfirmModal(
+                "Hapus Data Pelatihan",
+                `Apakah Anda yakin ingin menghapus jadwal "${item.namaPelatihan}" di ${item.namaRuang}?`,
+                async () => {
+                    try {
+                        if (firebaseConfig && db && currentUser) {
+                            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'pelatihan_ruang', id));
+                        } else {
+                            trainingsData = trainingsData.filter(t => t.id !== id);
+                            refreshAllUI();
+                        }
+                        if (document.getElementById('edit-doc-id').value === id) resetForm();
+                        showToast("Data pelatihan berhasil dihapus.");
+                    } catch (err) {
+                        console.error("Delete error:", err);
+                        showToast("Gagal menghapus data.", "error");
+                    }
+                }
+            );
+        };
+
+        // Reset ke Data Contoh
+        window.confirmResetData = function() {
+            openConfirmModal(
+                "Reset ke Data Contoh",
+                "Semua data pelatihan saat ini akan diganti dengan 5 data contoh awal. Lanjutkan?",
+                async () => {
+                    try {
+                        if (firebaseConfig && db && currentUser) {
+                            const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'pelatihan_ruang');
+                            const snap = await getDocs(colRef);
+                            for (const d of snap.docs) {
+                                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'pelatihan_ruang', d.id));
+                            }
+                            for (const trn of DEFAULT_TRAININGS) {
+                                await addDoc(colRef, trn);
+                            }
+                        } else {
+                            trainingsData = DEFAULT_TRAININGS.map((t, i) => ({ id: 'trn_' + i, ...t }));
+                            refreshAllUI();
+                        }
+                        resetForm();
+                        showToast("Database berhasil di-reset ke data contoh.");
+                    } catch (err) {
+                        console.error("Reset error:", err);
+                        showToast("Gagal mereset data.", "error");
+                    }
+                }
+            );
+        };
+
+        // Ekspor ke CSV
+        window.exportToCSV = function() {
+            if (trainingsData.length === 0) {
+                showToast("Tidak ada data untuk diekspor.", "info");
+                return;
+            }
+
+            const headers = ["No", "Timestamp Input", "Nama Pelatihan", "Nama Ruang Kelas", "Tanggal Pelaksanaan", "Jumlah Peserta", "Keterangan"];
+            const rows = trainingsData.map((item, idx) => [
+                idx + 1,
+                `"${(item.timestamp || '').replace(/"/g, '""')}"`,
+                `"${(item.namaPelatihan || '').replace(/"/g, '""')}"`,
+                `"${(item.namaRuang || '').replace(/"/g, '""')}"`,
+                `"${(item.tanggal || '').replace(/"/g, '""')}"`,
+                item.jumlahPeserta || 0,
+                `"${(item.keterangan || '').replace(/"/g, '""')}"`
+            ]);
+
+            const csvContent = "\uFEFF" + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `Database_Ruang_Kelas_Pelatihan_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            showToast("File CSV berhasil diunduh!");
+        };
+
+        // Render Grid Master Referensi Ruang
+        function renderRoomsGrid() {
+            const grid = document.getElementById('rooms-grid');
+            grid.innerHTML = '';
+
+            roomsData.forEach(room => {
+                const isAvailable = room.status !== 'Perawatan';
+                const usageCount = trainingsData.filter(t => t.namaRuang === room.nama).length;
+
+                const card = document.createElement('div');
+                card.className = "bg-slate-50/70 hover:bg-white rounded-2xl p-5 border border-slate-200/90 hover:shadow-md transition-all flex flex-col justify-between";
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-start justify-between gap-2 mb-3">
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-base">${escapeHTML(room.nama)}</h3>
+                                <p class="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                                    <i data-lucide="map-pin" class="w-3.5 h-3.5 text-navy-600"></i>
+                                    <span>${escapeHTML(room.lokasi)}</span>
+                                </p>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-full text-[11px] font-semibold ${isAvailable ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+                                ${escapeHTML(room.status || 'Tersedia')}
+                            </span>
+                        </div>
+
+                        <div class="flex items-center gap-3 my-3 py-2.5 px-3 bg-white rounded-xl border border-slate-200/70 text-xs">
+                            <div class="flex items-center gap-1.5 text-navy-700 font-semibold">
+                                <i data-lucide="users" class="w-4 h-4 text-navy-600"></i>
+                                <span>Kapasitas: ${room.kapasitas} org</span>
+                            </div>
+                            <span class="text-slate-300">|</span>
+                            <div class="text-slate-600">
+                                Terjadwal: <span class="font-semibold text-slate-800">${usageCount} kelas</span>
+                            </div>
+                        </div>
+
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            <span class="font-semibold text-slate-700">Fasilitas:</span> ${escapeHTML(room.fasilitas)}
+                        </p>
+                    </div>
+
+                    <div class="pt-4 mt-4 border-t border-slate-200/70 flex justify-end gap-2">
+                        <button onclick="openRoomModal('${room.id}')" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-navy-700 bg-navy-50 hover:bg-navy-100 rounded-lg transition-colors">
+                            <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                            <span>Edit Ruang</span>
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        // Modal Master Ruang: Buka & Tutup
+        window.openRoomModal = function(roomId = null) {
+            const modal = document.getElementById('room-modal');
+            const title = document.getElementById('room-modal-title');
+            document.getElementById('room-form').reset();
+
+            if (roomId) {
+                const room = roomsData.find(r => r.id === roomId);
+                if (!room) return;
+                title.textContent = "Edit Master Ruang Kelas";
+                document.getElementById('room-doc-id').value = room.id;
+                document.getElementById('room-input-nama').value = room.nama;
+                document.getElementById('room-input-kapasitas').value = room.kapasitas;
+                document.getElementById('room-input-lokasi').value = room.lokasi;
+                document.getElementById('room-input-fasilitas').value = room.fasilitas;
+                document.getElementById('room-input-status').value = room.status || 'Tersedia';
+            } else {
+                title.textContent = "Tambah Ruang Kelas Baru";
+                document.getElementById('room-doc-id').value = '';
+            }
+
+            modal.classList.remove('hidden');
+        };
+
+        window.closeRoomModal = function() {
+            document.getElementById('room-modal').classList.add('hidden');
+        };
+
+        // Simpan Master Ruang
+        window.handleRoomSubmit = async function(e) {
+            e.preventDefault();
+            const docId = document.getElementById('room-doc-id').value;
+            const payload = {
+                nama: document.getElementById('room-input-nama').value.trim(),
+                kapasitas: parseInt(document.getElementById('room-input-kapasitas').value, 10),
+                lokasi: document.getElementById('room-input-lokasi').value.trim(),
+                fasilitas: document.getElementById('room-input-fasilitas').value.trim(),
+                status: document.getElementById('room-input-status').value
+            };
+
+            try {
+                if (firebaseConfig && db && currentUser) {
+                    if (docId) {
+                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'master_ruang', docId), payload);
+                        showToast("Referensi ruang berhasil diperbarui!");
+                    } else {
+                        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'master_ruang'), payload);
+                        showToast("Ruang kelas baru berhasil ditambahkan!");
+                    }
+                } else {
+                    if (docId) {
+                        const idx = roomsData.findIndex(r => r.id === docId);
+                        if (idx > -1) roomsData[idx] = { id: docId, ...payload };
+                    } else {
+                        roomsData.push({ id: 'room_' + Date.now(), ...payload });
+                    }
+                    refreshAllUI();
+                    showToast("Referensi ruang berhasil disimpan!");
+                }
+                closeRoomModal();
+            } catch (err) {
+                console.error("Save room error:", err);
+                showToast("Gagal menyimpan data ruang.", "error");
+            }
+        };
+
+        // Navigasi Tab
+        window.switchTab = function(tabName) {
+            const viewUtama = document.getElementById('view-utama');
+            const viewRuang = document.getElementById('view-ruang');
+            const btnUtama = document.getElementById('tab-btn-utama');
+            const btnRuang = document.getElementById('tab-btn-ruang');
+
+            if (tabName === 'utama') {
+                viewUtama.classList.remove('hidden');
+                viewRuang.classList.add('hidden');
+                btnUtama.className = "flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-all bg-navy-600 text-white shadow-sm";
+                btnRuang.className = "flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-all text-sky-200 hover:text-white hover:bg-navy-700/60";
+            } else {
+                viewUtama.classList.add('hidden');
+                viewRuang.classList.remove('hidden');
+                btnRuang.className = "flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-all bg-navy-600 text-white shadow-sm";
+                btnUtama.className = "flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-all text-sky-200 hover:text-white hover:bg-navy-700/60";
+            }
+        };
+
+        // Custom Modal Konfirmasi
+        function openConfirmModal(title, message, onConfirm) {
+            document.getElementById('confirm-title').textContent = title;
+            document.getElementById('confirm-message').textContent = message;
+            confirmCallback = onConfirm;
+            document.getElementById('confirm-modal').classList.remove('hidden');
+        }
+
+        window.closeConfirmModal = function() {
+            document.getElementById('confirm-modal').classList.add('hidden');
+            confirmCallback = null;
+        };
+
+        document.getElementById('confirm-action-btn').addEventListener('click', async () => {
+            if (confirmCallback) {
+                await confirmCallback();
+            }
+            closeConfirmModal();
+        });
+
+        // Helper XSS Escape
+        function escapeHTML(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // Jalankan aplikasi saat halaman siap
+        window.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
