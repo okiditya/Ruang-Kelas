@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Halo GHANI! Ayo Bermain!</title>
+    <!-- Menggunakan Tailwind CSS untuk tata letak responsif -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font ceria yang mudah dibaca anak-anak -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Pengaturan dasar agar ramah sentuhan dan mencegah seleksi teks */
+        * {
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            touch-action: manipulation;
+        }
+
+        body {
+            font-family: 'Fredoka', sans-serif;
+            overflow: hidden;
+            background: linear-gradient(180deg, #38BDF8 0%, #BAE6FD 65%, #86EFAC 65%, #4ADE80 100%);
+            height: 100vh;
+            width: 100vw;
+            margin: 0;
+        }
+
+        /* Animasi Awan Mengambang */
+        @keyframes floatCloud {
+            0% { transform: translateX(-120px); }
+            100% { transform: translateX(calc(100vw + 120px)); }
+        }
+        .cloud {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.85);
+            border-radius: 9999px;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .cloud::before, .cloud::after {
+            content: '';
+            position: absolute;
+            background: inherit;
+            border-radius: 50%;
+        }
+
+        /* Animasi Tombol Memantul Lucu */
+        @keyframes bounceGentle {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-10px) scale(1.03); }
+        }
+        .animate-bounce-gentle {
+            animation: bounceGentle 2s infinite ease-in-out;
+        }
+
+        /* Animasi Goyangan Lembut saat salah pilih (tanpa efek negatif) */
+        @keyframes wobbleSoft {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-6deg); }
+            75% { transform: rotate(6deg); }
+        }
+        .animate-wobble {
+            animation: wobbleSoft 0.5s ease-in-out;
+        }
+
+        /* Animasi Melompat Senang saat jawaban benar */
+        @keyframes happyJump {
+            0%, 100% { transform: scale(1) translateY(0); }
+            40% { transform: scale(1.2) translateY(-30px); }
+            70% { transform: scale(0.95) translateY(0); }
+        }
+        .animate-happy {
+            animation: happyJump 0.7s ease-out;
+        }
+
+        /* Efek tombol 3D ekstra besar untuk jari balita */
+        .btn-kid {
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+            box-shadow: 0 10px 0 rgba(0, 0, 0, 0.2);
+        }
+        .btn-kid:active {
+            transform: translateY(6px);
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        /* Styling khusus Balon */
+        .balloon {
+            position: absolute;
+            border-radius: 50% 50% 50% 50% / 45% 45% 55% 55%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset -10px -10px 20px rgba(0,0,0,0.15), inset 10px 10px 20px rgba(255,255,255,0.5);
+            transition: transform 0.1s;
+        }
+        .balloon::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            width: 14px;
+            height: 12px;
+            background: inherit;
+            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+        }
+        .balloon-string {
+            position: absolute;
+            bottom: -55px;
+            width: 3px;
+            height: 45px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 2px;
+            pointer-events: none;
+        }
+
+        /* Canvas Konfeti di lapisan atas */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 50;
+        }
+    </style>
+</head>
+<body class="relative flex flex-col justify-between">
+
+    <!-- Latar Belakang Awan Bergerak -->
+    <div id="clouds-container" class="fixed inset-0 pointer-events-none overflow-hidden z-0"></div>
+
+    <!-- Canvas untuk efek konfeti dan kembang api -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- Header Navigasi Ramah Balita (Selalu terlihat saat bermain) -->
+    <header id="top-bar" class="relative z-30 flex items-center justify-between p-3 sm:p-5 hidden">
+        <!-- Tombol Rumah / Menu Utama -->
+        <button onclick="goHome()" aria-label="Menu Utama"
+            class="btn-kid bg-amber-400 hover:bg-amber-300 border-4 border-white text-amber-950 rounded-3xl px-4 py-3 sm:px-6 sm:py-4 flex items-center gap-2 text-xl sm:text-2xl font-bold shadow-lg">
+            <span class="text-3xl sm:text-4xl">🏠</span>
+            <span class="hidden sm:inline">Menu</span>
+        </button>
+
+        <!-- Badge Nama Ghani -->
+        <div class="bg-white/90 border-4 border-sky-400 rounded-full px-5 py-2 shadow-md">
+            <span class="text-xl sm:text-3xl font-bold text-sky-600 tracking-wide">🌟 GHANI 🌟</span>
+        </div>
+
+        <!-- Tombol Suara On/Off -->
+        <button id="sound-toggle-btn" onclick="toggleSound()" aria-label="Suara"
+            class="btn-kid bg-emerald-400 hover:bg-emerald-300 border-4 border-white text-emerald-950 rounded-3xl p-3 sm:p-4 text-3xl sm:text-4xl shadow-lg">
+            🔊
+        </button>
+    </header>
+
+    <!-- ================= LAYAR 1: HALAMAN UTAMA (WELCOME SCREEN) ================= -->
+    <main id="screen-welcome" class="relative z-20 flex-1 flex flex-col items-center justify-center p-4 text-center">
+        <div class="bg-white/95 border-8 border-yellow-400 rounded-[3rem] p-6 sm:p-10 max-w-2xl w-full shadow-2xl transform transition-all">
+            <div class="text-6xl sm:text-8xl mb-3 animate-bounce-gentle">🎈🦁⭐</div>
+            <h1 class="text-4xl sm:text-6xl font-bold text-sky-600 mb-2 drop-shadow-sm">
+                Halo <span class="text-orange-500">GHANI!</span>
+            </h1>
+            <p class="text-2xl sm:text-3xl font-semibold text-slate-600 mb-8">
+                Ayo Kita Bermain!
+            </p>
+            
+            <button onclick="startApp()" 
+                class="btn-kid animate-bounce-gentle w-full sm:w-auto bg-gradient-to-b from-green-400 to-green-600 border-4 border-white text-white text-3xl sm:text-5xl font-bold py-6 px-12 rounded-full shadow-xl cursor-pointer">
+                ▶️ MULAI MAIN
+            </button>
+        </div>
+    </main>
+
+    <!-- ================= LAYAR 2: PILIHAN MINI-GAME ================= -->
+    <section id="screen-menu" class="relative z-20 flex-1 flex flex-col items-center justify-center p-4 hidden">
+        <h2 class="text-3xl sm:text-5xl font-bold text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.25)] mb-6 text-center">
+            Pilih Permainan, Ghani! 👇
+        </h2>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-6 max-w-5xl w-full px-2">
+            <!-- Kartu Game 1: Balon Warna -->
+            <button onclick="openGame('balloon')" 
+                class="btn-kid bg-gradient-to-b from-rose-400 to-rose-500 border-6 border-white rounded-[2.5rem] p-6 flex flex-col items-center justify-center text-white shadow-xl">
+                <span class="text-7xl sm:text-8xl mb-3">🎈</span>
+                <span class="text-2xl sm:text-3xl font-bold">Balon Warna</span>
+            </button>
+
+            <!-- Kartu Game 2: Tebak Hewan -->
+            <button onclick="openGame('animal')" 
+                class="btn-kid bg-gradient-to-b from-amber-400 to-orange-500 border-6 border-white rounded-[2.5rem] p-6 flex flex-col items-center justify-center text-white shadow-xl">
+                <span class="text-7xl sm:text-8xl mb-3">🦁</span>
+                <span class="text-2xl sm:text-3xl font-bold">Tebak Hewan</span>
+            </button>
+
+            <!-- Kartu Game 3: Hitung Bintang -->
+            <button onclick="openGame('star')" 
+                class="btn-kid bg-gradient-to-b from-indigo-400 to-purple-600 border-6 border-white rounded-[2.5rem] p-6 flex flex-col items-center justify-center text-white shadow-xl">
+                <span class="text-7xl sm:text-8xl mb-3">⭐</span>
+                <span class="text-2xl sm:text-3xl font-bold">Hitung Bintang</span>
+            </button>
+        </div>
+    </section>
+
+    <!-- ================= GAME 1: PECAHKAN BALON WARNA ================= -->
+    <section id="game-balloon" class="relative z-10 flex-1 w-full h-full overflow-hidden hidden">
+        <!-- Petunjuk visual sederhana di atas -->
+        <div class="text-center pointer-events-none mt-2">
+            <span id="balloon-label" class="inline-block bg-white/90 border-4 border-rose-400 text-rose-600 text-2xl sm:text-4xl font-bold px-6 py-2 rounded-full shadow-md">
+                Sentuh Balonnya, Ghani! 🎈
+            </span>
+        </div>
+        <!-- Area Balon Terbang -->
+        <div id="balloon-arena" class="relative w-full h-full"></div>
+    </section>
+
+    <!-- ================= GAME 2: TEBAK SUARA & GAMBAR HEWAN ================= -->
+    <section id="game-animal" class="relative z-20 flex-1 flex flex-col items-center justify-center p-4 hidden">
+        <!-- Kotak Pertanyaan & Tombol Ulangi Suara -->
+        <button onclick="repeatAnimalQuestion()" 
+            class="btn-kid bg-white border-4 border-orange-400 rounded-full px-6 py-3 sm:px-10 sm:py-4 mb-6 sm:mb-10 flex items-center gap-3 shadow-lg">
+            <span class="text-3xl sm:text-5xl">🗣️</span>
+            <span id="animal-question-text" class="text-2xl sm:text-4xl font-bold text-slate-800">
+                Mana Kucing, Ghani?
+            </span>
+        </button>
+
+        <!-- 3 Pilihan Kartu Hewan Besar -->
+        <div id="animal-cards" class="grid grid-cols-3 gap-3 sm:gap-8 max-w-4xl w-full">
+            <!-- Diisi secara dinamis oleh JavaScript -->
+        </div>
+    </section>
+
+    <!-- ================= GAME 3: HITUNG BINTANG 1 - 5 ================= -->
+    <section id="game-star" class="relative z-20 flex-1 flex flex-col items-center justify-between p-4 pb-8 hidden">
+        <!-- Papan Angka & Instruksi -->
+        <div class="bg-white/95 border-4 border-purple-400 rounded-full px-8 py-3 shadow-lg text-center">
+            <span id="star-instruction" class="text-2xl sm:text-4xl font-bold text-purple-700">
+                Sentuh Bintangnya, Ghani! ⭐
+            </span>
+        </div>
+
+        <!-- Area Bintang Besar -->
+        <div id="star-arena" class="flex-1 flex flex-wrap items-center justify-center gap-4 sm:gap-8 max-w-4xl w-full my-4">
+            <!-- Bintang dibuat dinamis -->
+        </div>
+
+        <!-- Tombol Lanjut Ronde Berikutnya (Muncul saat selesai) -->
+        <div id="star-next-container" class="h-20 flex items-center justify-center">
+            <button id="star-next-btn" onclick="setupStarRound()" class="hidden btn-kid bg-green-500 border-4 border-white text-white text-2xl sm:text-3xl font-bold px-8 py-4 rounded-full shadow-xl">
+                Main Lagi! 🔄
+            </button>
+        </div>
+    </section>
+
+    <script>
+        /* =========================================================================
+           1. SISTEM AUDIO & TEXT-TO-SPEECH (RAMAH ANAK INDONESIA)
+           ========================================================================= */
+        let soundEnabled = true;
+        let audioCtx = null;
+
+        // Inisialisasi Web Audio API saat interaksi pertama
+        function initAudio() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // Toggle suara On/Off
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('sound-toggle-btn');
+            btn.textContent = soundEnabled ? '🔊' : '🔇';
+            btn.classList.toggle('bg-emerald-400', soundEnabled);
+            btn.classList.toggle('bg-slate-300', !soundEnabled);
+            if (soundEnabled) {
+                playTone(523.25, 'sine', 0.15);
+            } else {
+                window.speechSynthesis.cancel();
+            }
+        }
+
+        // Fungsi bicara Bahasa Indonesia (Text-to-Speech)
+        function speak(text) {
+            if (!soundEnabled || !('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel(); // Hentikan kalimat sebelumnya agar tidak menumpuk
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'id-ID';
+            utterance.rate = 0.92;  // Sedikit lebih lambat agar jelas didengar balita
+            utterance.pitch = 1.25; // Nada sedikit lebih tinggi & ceria
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // Efek suara synthesizer sederhana (tanpa file eksternal)
+        function playTone(freq, type = 'sine', duration = 0.2, startTimeOffset = 0) {
+            if (!soundEnabled) return;
+            initAudio();
+            const now = audioCtx.currentTime + startTimeOffset;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, now);
+            
+            gain.gain.setValueAtTime(0.25, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.start(now);
+            osc.stop(now + duration);
+        }
+
+        // Suara letupan balon ceria ("Pop!")
+        function playPopSound() {
+            if (!soundEnabled) return;
+            initAudio();
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(300, now);
+            osc.frequency.exponentialRampToValueAtTime(850, now + 0.12);
+            
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now);
+            osc.stop(now + 0.12);
+        }
+
+        // Melodi kemenangan / pujian ceria
+        function playSuccessMelody() {
+            const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+            notes.forEach((freq, idx) => {
+                playTone(freq, 'triangle', 0.22, idx * 0.1);
+            });
+        }
+
+        // Suara lonceng lembut saat salah pilih (tidak menakutkan)
+        function playGentleBoing() {
+            playTone(320, 'sine', 0.15, 0);
+            playTone(280, 'sine', 0.2, 0.12);
+        }
+
+        /* =========================================================================
+           2. EFEK KONFETI & KEMBANG API VISUAL
+           ========================================================================= */
+        const confettiCanvas = document.getElementById('confetti-canvas');
+        const ctx = confettiCanvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            confettiCanvas.width = window.innerWidth;
+            confettiCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function spawnConfetti(x, y, count = 30) {
+            const colors = ['#FF595E', '#FFCA3A', '#8AC926', '#1982C4', '#6A4C93', '#FF924C'];
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 3 + Math.random() * 8;
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed - 3,
+                    size: 8 + Math.random() * 10,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    rotation: Math.random() * 360,
+                    rotSpeed: (Math.random() - 0.5) * 10,
+                    life: 1.0,
+                    shape: Math.random() > 0.5 ? 'circle' : 'star'
+                });
+            }
+        }
+
+        function updateConfetti() {
+            ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.25; // Gravitasi ringan
+                p.rotation += p.rotSpeed;
+                p.life -= 0.018;
+
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                    continue;
+                }
+
+                ctx.save();
+                ctx.globalAlpha = p.life;
+                ctx.translate(p.x, p.y);
+                ctx.rotate((p.rotation * Math.PI) / 180);
+                ctx.fillStyle = p.color;
+
+                if (p.shape === 'circle') {
+                    ctx.beginPath();
+                    ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                }
+                ctx.restore();
+            }
+            requestAnimationFrame(updateConfetti);
+        }
+        updateConfetti();
+
+        /* =========================================================================
+           3. NAVIGASI ANTAR LAYAR & LATAR BELAKANG AWAN
+           ========================================================================= */
+        let currentGame = null;
+        let balloonInterval = null;
+
+        // Buat awan hiasan di latar belakang
+        function createClouds() {
+            const container = document.getElementById('clouds-container');
+            for (let i = 0; i < 5; i++) {
+                const cloud = document.createElement('div');
+                cloud.className = 'cloud';
+                const size = 80 + Math.random() * 80;
+                cloud.style.width = `${size * 1.8}px`;
+                cloud.style.height = `${size * 0.6}px`;
+                cloud.style.top = `${5 + i * 10}%`;
+                cloud.style.animation = `floatCloud ${25 + i * 7}s linear infinite`;
+                cloud.style.animationDelay = `-${i * 6}s`;
+                container.appendChild(cloud);
+            }
+        }
+        createClouds();
+
+        function hideAllScreens() {
+            document.getElementById('screen-welcome').classList.add('hidden');
+            document.getElementById('screen-menu').classList.add('hidden');
+            document.getElementById('game-balloon').classList.add('hidden');
+            document.getElementById('game-animal').classList.add('hidden');
+            document.getElementById('game-star').classList.add('hidden');
+            
+            // Hentikan loop balon jika keluar dari game balon
+            if (balloonInterval) {
+                clearInterval(balloonInterval);
+                balloonInterval = null;
+            }
+            document.getElementById('balloon-arena').innerHTML = '';
+        }
+
+        function startApp() {
+            initAudio();
+            playSuccessMelody();
+            spawnConfetti(window.innerWidth / 2, window.innerHeight / 2, 40);
+            document.getElementById('top-bar').classList.remove('hidden');
+            goHome(false);
+            speak("Halo Ghani! Ayo kita bermain! Pilih permainannya ya!");
+        }
+
+        function goHome(shouldSpeak = true) {
+            hideAllScreens();
+            currentGame = null;
+            document.getElementById('screen-menu').classList.remove('hidden');
+            if (shouldSpeak) {
+                playTone(523.25, 'sine', 0.15);
+                speak("Mau main apa lagi, Ghani?");
+            }
+        }
+
+        function openGame(gameName) {
+            initAudio();
+            playTone(659.25, 'triangle', 0.18);
+            hideAllScreens();
+            currentGame = gameName;
+
+            if (gameName === 'balloon') {
+                document.getElementById('game-balloon').classList.remove('hidden');
+                startBalloonGame();
+            } else if (gameName === 'animal') {
+                document.getElementById('game-animal').classList.remove('hidden');
+                startAnimalGame();
+            } else if (gameName === 'star') {
+                document.getElementById('game-star').classList.remove('hidden');
+                startStarGame();
+            }
+        }
+
+        /* =========================================================================
+           4. MINI-GAME 1: PECAHKAN BALON WARNA (POP THE BALLOONS)
+           ========================================================================= */
+        const balloonColors = [
+            { name: 'Merah!', hex: '#EF4444', border: '#FCA5A5' },
+            { name: 'Biru!', hex: '#3B82F6', border: '#93C5FD' },
+            { name: 'Kuning!', hex: '#FACC15', border: '#FEF08A' },
+            { name: 'Hijau!', hex: '#22C55E', border: '#86EFAC' },
+            { name: 'Oranye!', hex: '#F97316', border: '#FDBA74' },
+            { name: 'Ungu!', hex: '#A855F7', border: '#D8B4FE' }
+        ];
+
+        function startBalloonGame() {
+            document.getElementById('balloon-label').textContent = "Sentuh Balonnya, Ghani! 🎈";
+            speak("Ayo pecahkan balon warna-warni, Ghani!");
+            
+            // Munculkan 3 balon langsung di awal
+            for (let i = 0; i < 3; i++) {
+                setTimeout(spawnBalloon, i * 400);
+            }
+            // Terus munculkan balon baru secara berkala
+            balloonInterval = setInterval(spawnBalloon, 1400);
+        }
+
+        function spawnBalloon() {
+            if (currentGame !== 'balloon') return;
+            const arena = document.getElementById('balloon-arena');
+            if (arena.children.length > 8) return; // Batasi maksimal balon di layar agar tidak penuh
+
+            const colorObj = balloonColors[Math.floor(Math.random() * balloonColors.length)];
+            const balloon = document.createElement('div');
+            balloon.className = 'balloon';
+            
+            // Ukuran besar agar mudah disentuh balita
+            const size = window.innerWidth < 640 ? 95 : 125;
+            balloon.style.width = `${size}px`;
+            balloon.style.height = `${size * 1.18}px`;
+            balloon.style.backgroundColor = colorObj.hex;
+            
+            // Posisi horizontal acak dengan margin aman
+            const maxLeft = arena.clientWidth - size - 20;
+            const leftPos = Math.max(10, Math.random() * maxLeft);
+            balloon.style.left = `${leftPos}px`;
+            balloon.style.bottom = `-${size * 1.4}px`;
+
+            // Tali balon
+            const string = document.createElement('div');
+            string.className = 'balloon-string';
+            balloon.appendChild(string);
+
+            // Event sentuh & klik
+            const popHandler = (e) => {
+                e.preventDefault();
+                if (balloon.dataset.popped) return;
+                balloon.dataset.popped = 'true';
+
+                const rect = balloon.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+
+                playPopSound();
+                spawnConfetti(centerX, centerY, 25);
+                
+                // Tampilkan & ucapkan nama warna
+                const label = document.getElementById('balloon-label');
+                label.textContent = `Balon ${colorObj.name} 🎉`;
+                label.style.color = colorObj.hex === '#FACC15' ? '#CA8A04' : colorObj.hex;
+                speak(colorObj.name);
+
+                balloon.remove();
+            };
+
+            balloon.addEventListener('pointerdown', popHandler);
+            arena.appendChild(balloon);
+
+            // Animasi melayang pelan ke atas
+            let currentBottom = -(size * 1.4);
+            const speed = 1.3 + Math.random() * 1.1; // Kecepatan pelan ramah balita
+            const wobbleOffset = Math.random() * 100;
+
+            function floatUp() {
+                if (!balloon.parentNode || currentGame !== 'balloon') return;
+                currentBottom += speed;
+                const sway = Math.sin((currentBottom + wobbleOffset) / 40) * 15;
+                balloon.style.bottom = `${currentBottom}px`;
+                balloon.style.transform = `translateX(${sway}px)`;
+
+                if (currentBottom > arena.clientHeight + 150) {
+                    balloon.remove();
+                } else {
+                    requestAnimationFrame(floatUp);
+                }
+            }
+            requestAnimationFrame(floatUp);
+        }
+
+        /* =========================================================================
+           5. MINI-GAME 2: TEBAK SUARA & GAMBAR HEWAN
+           ========================================================================= */
+        const animalsData = [
+            { id: 'kucing', name: 'Kucing', emoji: '🐱', soundText: 'Meong! Meong!' },
+            { id: 'anjing', name: 'Anjing', emoji: '🐶', soundText: 'Guk! Guk!' },
+            { id: 'sapi', name: 'Sapi', emoji: '🐮', soundText: 'Mooo!' },
+            { id: 'bebek', name: 'Bebek', emoji: '🦆', soundText: 'Kwek! Kwek!' },
+            { id: 'singa', name: 'Singa', emoji: '🦁', soundText: 'Roaar!' },
+            { id: 'gajah', name: 'Gajah', emoji: '🐘', soundText: 'Preeet!' },
+            { id: 'kodok', name: 'Kodok', emoji: '🐸', soundText: 'Krok! Krok!' },
+            { id: 'ayam', name: 'Ayam', emoji: '🐔', soundText: 'Kukuruyuk!' }
+        ];
+
+        let targetAnimal = null;
+        let animalLock = false;
+
+        function startAnimalGame() {
+            setupAnimalRound();
+        }
+
+        function setupAnimalRound() {
+            animalLock = false;
+            // Acak dan ambil 3 hewan berbeda
+            const shuffled = [...animalsData].sort(() => 0.5 - Math.random());
+            const choices = shuffled.slice(0, 3);
+            targetAnimal = choices[Math.floor(Math.random() * choices.length)];
+
+            const questionText = `Mana ${targetAnimal.name}, Ghani?`;
+            document.getElementById('animal-question-text').textContent = questionText;
+
+            const container = document.getElementById('animal-cards');
+            container.innerHTML = '';
+
+            choices.forEach(animal => {
+                const card = document.createElement('button');
+                card.className = 'btn-kid bg-white border-6 border-sky-300 rounded-[2rem] p-4 sm:p-8 flex flex-col items-center justify-center shadow-xl cursor-pointer';
+                card.innerHTML = `
+                    <span class="text-6xl sm:text-9xl mb-2 sm:mb-4 pointer-events-none">${animal.emoji}</span>
+                    <span class="text-xl sm:text-3xl font-bold text-slate-700 pointer-events-none">${animal.name}</span>
+                `;
+
+                card.addEventListener('pointerdown', () => handleAnimalChoice(animal, card));
+                container.appendChild(card);
+            });
+
+            speak(questionText);
+        }
+
+        function repeatAnimalQuestion() {
+            if (!targetAnimal) return;
+            playTone(587.33, 'sine', 0.15);
+            speak(`Mana ${targetAnimal.name}, Ghani?`);
+        }
+
+        function handleAnimalChoice(chosenAnimal, cardElement) {
+            if (animalLock) return;
+
+            if (chosenAnimal.id === targetAnimal.id) {
+                // JAWABAN BENAR!
+                animalLock = true;
+                cardElement.classList.remove('border-sky-300');
+                cardElement.classList.add('border-green-400', 'bg-green-50', 'animate-happy');
+                
+                const rect = cardElement.getBoundingClientRect();
+                spawnConfetti(rect.left + rect.width / 2, rect.top + rect.height / 2, 45);
+                playSuccessMelody();
+
+                const praises = [
+                    `Pintar Ghani! Itu ${chosenAnimal.name}! ${chosenAnimal.soundText}`,
+                    `Hebat Ghani! Benar, ${chosenAnimal.name}!`,
+                    `Yey! Ghani pintar sekali! Itu ${chosenAnimal.name}!`
+                ];
+                const randomPraise = praises[Math.floor(Math.random() * praises.length)];
+                document.getElementById('animal-question-text').textContent = `⭐ Hebat Ghani! ⭐`;
+                speak(randomPraise);
+
+                // Otomatis lanjut ke hewan berikutnya setelah 2.6 detik
+                setTimeout(() => {
+                    if (currentGame === 'animal') setupAnimalRound();
+                }, 2600);
+
+            } else {
+                // JAWABAN BELUM TEPAT (Ramah, tanpa hukuman)
+                playGentleBoing();
+                cardElement.classList.remove('animate-wobble');
+                void cardElement.offsetWidth; // Trigger reflow agar animasi ulang
+                cardElement.classList.add('animate-wobble');
+                speak(`Itu ${chosenAnimal.name}. Ayo cari ${targetAnimal.name}, Ghani!`);
+            }
+        }
+
+        /* =========================================================================
+           6. MINI-GAME 3: HITUNG BINTANG 1 - 5
+           ========================================================================= */
+        const numberWords = ['Satu!', 'Dua!', 'Tiga!', 'Empat!', 'Lima!'];
+        let totalStarsInRound = 3;
+        let starsCounted = 0;
+
+        function startStarGame() {
+            totalStarsInRound = 2; // Mulai dari 2 bintang dulu agar sangat mudah, lalu naik bertahap hingga 5
+            setupStarRound();
+        }
+
+        function setupStarRound() {
+            starsCounted = 0;
+            // Naikkan jumlah bintang bertahap (2 -> 3 -> 4 -> 5 -> ulang)
+            totalStarsInRound = totalStarsInRound >= 5 ? 2 : totalStarsInRound + 1;
+
+            document.getElementById('star-next-btn').classList.add('hidden');
+            document.getElementById('star-instruction').textContent = `Ayo hitung ${totalStarsInRound} bintang, Ghani! ⭐`;
+            speak(`Ayo sentuh dan hitung bintangnya, Ghani!`);
+
+            const arena = document.getElementById('star-arena');
+            arena.innerHTML = '';
+
+            for (let i = 0; i < totalStarsInRound; i++) {
+                const starBtn = document.createElement('button');
+                starBtn.className = 'btn-kid bg-white/90 border-6 border-slate-300 rounded-[2rem] w-28 h-28 sm:w-40 sm:h-40 flex flex-col items-center justify-center shadow-xl transition-all cursor-pointer';
+                starBtn.innerHTML = `
+                    <span class="star-icon text-6xl sm:text-8xl filter grayscale opacity-60 transition-all duration-300">⭐</span>
+                    <span class="star-num text-xl sm:text-3xl font-bold text-slate-400 mt-1">?</span>
+                `;
+
+                starBtn.addEventListener('pointerdown', () => handleStarTap(starBtn));
+                arena.appendChild(starBtn);
+            }
+        }
+
+        function handleStarTap(starBtn) {
+            if (starBtn.dataset.counted === 'true') return;
+            starBtn.dataset.counted = 'true';
+
+            starsCounted++;
+            const currentWord = numberWords[starsCounted - 1];
+
+            // Ubah tampilan bintang menjadi bersinar emas
+            starBtn.classList.remove('border-slate-300', 'bg-white/90');
+            starBtn.classList.add('border-yellow-400', 'bg-yellow-100', 'animate-happy');
+            
+            const icon = starBtn.querySelector('.star-icon');
+            icon.classList.remove('grayscale', 'opacity-60');
+            icon.classList.add('scale-110');
+
+            const numLabel = starBtn.querySelector('.star-num');
+            numLabel.textContent = starsCounted;
+            numLabel.classList.remove('text-slate-400');
+            numLabel.classList.add('text-orange-600');
+
+            // Nada naik setiap hitungan
+            const scaleFreqs = [523.25, 587.33, 659.25, 783.99, 880.00];
+            playTone(scaleFreqs[starsCounted - 1], 'triangle', 0.25);
+
+            const rect = starBtn.getBoundingClientRect();
+            spawnConfetti(rect.left + rect.width / 2, rect.top + rect.height / 2, 20);
+
+            document.getElementById('star-instruction').textContent = `${starsCounted} - ${currentWord}`;
+
+            if (starsCounted < totalStarsInRound) {
+                speak(currentWord);
+            } else {
+                // Semua bintang sudah dihitung! Rayakan!
+                setTimeout(() => {
+                    playSuccessMelody();
+                    spawnConfetti(window.innerWidth * 0.3, window.innerHeight * 0.4, 40);
+                    spawnConfetti(window.innerWidth * 0.7, window.innerHeight * 0.4, 40);
+                    
+                    document.getElementById('star-instruction').textContent = `🎉 Yey! Hebat sekali Ghani! 🎉`;
+                    speak(`${currentWord} Yey! Hebat sekali Ghani!`);
+                    document.getElementById('star-next-btn').classList.remove('hidden');
+                }, 400);
+            }
+        }
+    </script>
+</body>
+</html>
